@@ -1,17 +1,20 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
+using System.Net;
 using System.Text;
+using System.Xml.Linq;
 
 namespace Othello
 {
     /// <summary>
     /// Handles board state and logic
     /// </summary>
-    internal class Board
+    internal class Board : ICloneable
     {
-        private readonly List<Piece> _board;
-        private readonly List<Square> _emptySquares;
-        private readonly List<int> _indices;
-        private readonly int _size;
+        private List<Color> board;
+        private List<Square> emptySquares;
+        private List<int> indices;
+        public int size;
 
         private static readonly Step[] StepDirections =
         {
@@ -27,31 +30,31 @@ namespace Othello
 
         public Board(int size)
         {
-            _size = size;
-            var numSquares = _size * _size;
+            this.size = size;
+            var numSquares = this.size * this.size;
             // init game board with empty disks
-            _board = Enumerable.Repeat(Piece.Empty, numSquares).ToList();
+            board = Enumerable.Repeat(Color.Empty, numSquares).ToList();
 
             // set starting positions
-            var row = _size % 2 == 0 ? (_size - 1) / 2 : (_size - 1) / 2 - 1;
-            var col = _size / 2;
-            _board[row * _size + row] = Piece.White;
-            _board[row * _size + col] = Piece.Black;
-            _board[col * _size + row] = Piece.Black;
-            _board[col * _size + col] = Piece.White;
+            var row = this.size % 2 == 0 ? (this.size - 1) / 2 : (this.size - 1) / 2 - 1;
+            var col = this.size / 2;
+            board[row * this.size + row] = Color.White;
+            board[row * this.size + col] = Color.Black;
+            board[col * this.size + row] = Color.Black;
+            board[col * this.size + col] = Color.White;
 
             // index list (0...size) to avoid repeating same range in for loops
-            _indices = Enumerable.Range(0, _size).ToList();
+            indices = Enumerable.Range(0, size).ToList();
 
             // keep track of empty squares on board to avoid checking already filled positions
-            _emptySquares = new List<Square>(numSquares);
+            emptySquares = new List<Square>(numSquares);
             foreach (
-                var square in _indices
-                    .SelectMany(y => _indices, (y, x) => new Square(x, y))
-                    .Where(square => GetSquare(square) == Piece.Empty)
+                var square in indices
+                    .SelectMany(y => indices, (y, x) => new Square(x, y))
+                    .Where(square => GetSquare(square) == Color.Empty)
             )
             {
-                _emptySquares.Add(square);
+                emptySquares.Add(square);
             }
         }
 
@@ -61,7 +64,7 @@ namespace Othello
         /// <returns>True if board contains empty squares.</returns>
         public bool CanPlay()
         {
-            return _emptySquares.Count != 0;
+            return emptySquares.Count != 0;
         }
 
         /// <summary>
@@ -69,15 +72,15 @@ namespace Othello
         /// </summary>
         /// <param name="move"></param>
         /// <exception cref="ArgumentException"></exception>
-        public void PlaceDisc(Move move)
+        public void PlacePiece(Move move)
         {
             var start = move.Square;
-            if (GetSquare(start) != Piece.Empty)
+            if (GetSquare(start) != Color.Empty)
             {
                 throw new ArgumentException($"Trying to place disk to an occupied square {start}!");
             }
             SetSquare(start, move.Disk);
-            _emptySquares.Remove(start);
+            emptySquares.Remove(start);
             foreach (var dir in move.Directions)
             {
                 var pos = start + dir;
@@ -94,11 +97,11 @@ namespace Othello
         /// </summary>
         /// <param name="color"></param>
         /// <returns>A list of possible moves for given player.</returns>
-        public List<Move> PossibleMoves(Piece color)
+        public List<Move> PossibleMoves(Color color)
         {
             var moves = new List<Move>();
             var other = color.Opponent();
-            foreach (var square in _emptySquares)
+            foreach (var square in emptySquares)
             {
                 var value = 0;
                 var directions = new List<Step>();
@@ -139,30 +142,30 @@ namespace Othello
         }
 
         /// Print available move coordinates and resulting points gained.
-        public void printPossibleMoves(IReadOnlyCollection<Move> moves)
+        public void PrintPossibleMoves(IReadOnlyCollection<Move> moves)
         {
-            ConsoleManager.WriteLine($"  Possible moves ({moves.Count}):", Color.Yellow);
+            ConsoleVisuals.WriteLine($"  Possible moves ({moves.Count}):", System.Drawing.Color.Yellow);
             // convert board from Disk enums to strings
-            var formattedBoard = new List<string>(_board.Count);
-            formattedBoard.AddRange(_board.Select(disk => disk.BoardChar()));
+            var formattedBoard = new List<string>(board.Count);
+            formattedBoard.AddRange(board.Select(disk => disk.BoardChar()));
             foreach (var move in moves)
             {
                 Console.WriteLine($"  {move}");
                 var (x, y) = move.Square;
-                formattedBoard[y * _size + x] = ConsoleManager.Get(move.Value, Color.Yellow);
+                formattedBoard[y * size + x] = ConsoleVisuals.Get(move.Value, System.Drawing.Color.Yellow);
             }
             // print board with move positions
             Console.Write("   ");
-            foreach (var i in _indices)
+            foreach (var i in indices)
             {
                 Console.Write($" {i}");
             }
-            foreach (var y in _indices)
+            foreach (var y in indices)
             {
                 Console.Write($"\n  {y}");
-                foreach (var x in _indices)
+                foreach (var x in indices)
                 {
-                    Console.Write($" {formattedBoard[y * _size + x]}");
+                    Console.Write($" {formattedBoard[y * size + x]}");
                 }
             }
             Console.WriteLine("");
@@ -176,8 +179,8 @@ namespace Othello
             var (black, white) = PlayerScores();
             Console.WriteLine($"\n{this}");
             Console.WriteLine(
-                $"Score: {ConsoleManager.Get(black, Piece.Black.DiskColor())} | "
-                    + $"{ConsoleManager.Get(white, Piece.White.DiskColor())}"
+                $"Score: {ConsoleVisuals.Get(black, Color.Black.DiskColor())} | "
+                    + $"{ConsoleVisuals.Get(white, Color.White.DiskColor())}"
             );
         }
 
@@ -185,19 +188,19 @@ namespace Othello
         /// Calculates the final score.
         /// </summary>
         /// <returns>The winning player.</returns>
-        public Piece Result()
+        public Color Result()
         {
             var sum = Score();
             if (sum == 0)
             {
-                return Piece.Empty;
+                return Color.Empty;
             }
-            return sum > 0 ? Piece.White : Piece.Black;
+            return sum > 0 ? Color.White : Color.Black;
         }
 
         public string ToLogEntry()
         {
-            return _board.Aggregate(
+            return board.Aggregate(
                 new StringBuilder(),
                 (accumulator, disk) => accumulator.Append(disk.BoardChar(false)),
                 accumulator => accumulator.ToString()
@@ -212,7 +215,7 @@ namespace Othello
         /// <returns></returns>
         private bool CheckCoordinates(int x, int y)
         {
-            return 0 <= x && x < _size && 0 <= y && y < _size;
+            return 0 <= x && x < size && 0 <= y && y < size;
         }
 
         /// <summary>
@@ -220,21 +223,21 @@ namespace Othello
         /// </summary>
         /// <returns></returns>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        private (int, int) PlayerScores()
+        public (int, int) PlayerScores()
         {
             var black = 0;
             var white = 0;
-            foreach (var disk in _board)
+            foreach (var disk in board)
             {
                 switch (disk)
                 {
-                    case Piece.White:
+                    case Color.White:
                         ++white;
                         break;
-                    case Piece.Black:
+                    case Color.Black:
                         ++black;
                         break;
-                    case Piece.Empty:
+                    case Color.Empty:
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -249,7 +252,7 @@ namespace Othello
         /// <returns></returns>
         private int Score()
         {
-            return _board.Sum(x => Convert.ToInt32(x));
+            return board.Sum(x => Convert.ToInt32(x));
         }
 
         /// <summary>
@@ -257,14 +260,14 @@ namespace Othello
         /// </summary>
         /// <param name="square"></param>
         /// <returns></returns>
-        private Piece? GetSquare(Square square)
+        public Color? GetSquare(Square square)
         {
             var (x, y) = square;
             if (!CheckCoordinates(x, y))
             {
                 return null;
             }
-            return _board[y * _size + x];
+            return board[y * size + x];
         }
 
         /// <summary>
@@ -273,28 +276,38 @@ namespace Othello
         /// <param name="square"></param>
         /// <param name="pieceStatus"></param>
         /// <exception cref="ArgumentException"></exception>
-        private void SetSquare(Square square, Piece pieceStatus)
+        private void SetSquare(Square square, Color pieceStatus)
         {
             var (x, y) = square;
             if (!CheckCoordinates(x, y))
             {
                 throw new ArgumentException($"Invalid coordinates ({x},{y})!");
             }
-            _board[y * _size + x] = pieceStatus;
+            board[y * size + x] = pieceStatus;
         }
 
         /// Format game board to string
         public override string ToString()
         {
-            var text = _indices.Aggregate(" ", (current, i) => current + $" {i}");
-            foreach (var y in _indices)
+            var text = indices.Aggregate(" ", (current, i) => current + $" {i}");
+            foreach (var y in indices)
             {
                 text += $"\n{y}";
-                text = _indices
-                    .Select(x => _board[y * _size + x])
+                text = indices
+                    .Select(x => board[y * size + x])
                     .Aggregate(text, (current, disk) => current + $" {disk.BoardChar()}");
             }
             return text;
+        }
+
+        public object Clone()
+        {
+            var clonedBoard = new Board(size);
+
+            clonedBoard.board = new List<Color>(board);
+
+            clonedBoard.emptySquares = new List<Square>(emptySquares);
+            return clonedBoard;
         }
     }
 }

@@ -11,14 +11,14 @@ namespace Othello
 
         private bool isHuman;
         private int roundsPlayed;
-        private readonly Piece disk;
+        private readonly Color color;
         private readonly Random random;
         private readonly PlayerSettings settings;
 
-        public Player(Piece color, PlayerSettings settings)
+        public Player(Color color, PlayerSettings settings)
         {
             canPlay = true;
-            disk = color;
+            this.color = color;
             isHuman = true;
             random = new Random();
             this.settings = settings;
@@ -31,7 +31,7 @@ namespace Othello
         /// <returns>Black player.</returns>
         public static Player Black(PlayerSettings settings)
         {
-            return new Player(Piece.Black, settings);
+            return new Player(Color.Black, settings);
         }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace Othello
         /// <returns>White player.</returns>
         public static Player White(PlayerSettings settings)
         {
-            return new Player(Piece.White, settings);
+            return new Player(Color.White, settings);
         }
 
 #nullable enable
@@ -52,17 +52,17 @@ namespace Othello
         /// <returns></returns>
         public string? PlayOneMove(Board board)
         {
-            Console.WriteLine($"Turn: {disk.Name()}");
-            var moves = board.PossibleMoves(disk);
+            Console.WriteLine($"Turn: {color.Name()}");
+            var moves = board.PossibleMoves(color);
             if (moves.Count != 0)
             {
                 canPlay = true;
                 if (isHuman && settings.ShowHelpers)
                 {
-                    board.printPossibleMoves(moves);
+                    board.PrintPossibleMoves(moves);
                 }
-                var chosenMove = isHuman ? GetHumanMove(moves) : GetComputerMove(moves);
-                board.PlaceDisc(chosenMove);
+                var chosenMove = isHuman ? GetHumanMove(moves) : GetComputerMove(moves, board);
+                board.PlacePiece(chosenMove);
                 board.PrintScore();
                 ++roundsPlayed;
                 if (!settings.TestMode)
@@ -73,7 +73,7 @@ namespace Othello
             }
 
             canPlay = false;
-            ConsoleManager.WriteLine("  No moves available...", Color.Yellow);
+            ConsoleVisuals.WriteLine("  No moves available...", System.Drawing.Color.Yellow);
             return null;
         }
 
@@ -98,26 +98,112 @@ namespace Othello
         }
 
         /// <summary>
-        /// 
+        /// Determines the best move for the computer player using the Alpha-Beta pruning algorithm.
         /// </summary>
-        /// <param name="moves"></param>
-        /// <returns>Move chosen by computer.</returns>
-        private Move GetComputerMove(IReadOnlyList<Move> moves)
+        /// <param name="moves">The list of possible moves.</param>
+        /// <param name="board">The current state of the board.</param>
+        /// <returns>The best move determined for the computer player.</returns>
+        private Move GetComputerMove(IReadOnlyList<Move> moves, Board board)
         {
             Console.WriteLine("  Computer plays...");
-            Move chosenMove;
-            if (settings.TestMode)
+
+            // Alpha represents the best score that the maximizing player can guarantee at current or higher levels.
+            int alpha = int.MinValue;
+            // Beta represents the best score that the minimizing player can guarantee at current or higher levels.
+            int beta = int.MaxValue;
+            // Best move found for the computer.
+            Move bestMove = moves[0];
+            // Best score found for the computer, initialized to the lowest possible value.
+            int bestScore = int.MinValue;
+            // The depth of the search tree to explore.
+            int depth = 5;
+
+            // Loop through all possible moves to find the best one.
+            foreach (var move in moves)
             {
-                chosenMove = moves[0];
+                // Create a deep clone of the board to simulate the move without affecting the actual game board.
+                Board newBoard = (Board)board.Clone();
+                // Apply the move to the cloned board.
+                newBoard.PlacePiece(move);
+                // Perform the Alpha-Beta search recursively to evaluate the move.
+                int score = AlphaBeta(newBoard, depth - 1, alpha, beta, false);
+
+                // If the move has a better score than the best found so far, update the best move and score.
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestMove = move;
+                }
+
+                // Update alpha if a better score is found for the maximizing player.
+                alpha = Math.Max(alpha, score);
+            }
+            Console.WriteLine($"  {bestMove.Square} -> {bestMove.Value}");
+            return bestMove;
+        }
+
+        /// <summary>
+        /// Alpha-Beta pruning algorithm to evaluate the best score that can be achieved from the current board state.
+        /// </summary>
+        /// <param name="board">The board to evaluate.</param>
+        /// <param name="depth">The depth of the search tree to explore.</param>
+        /// <param name="alpha">The best score the maximizing player can guarantee so far.</param>
+        /// <param name="beta">The best score the minimizing player can guarantee so far.</param>
+        /// <param name="maximizingPlayer">Whether the current turn is for the maximizing player.</param>
+        /// <returns>The best score that can be achieved from the current board state.</returns>
+        private int AlphaBeta(Board board, int depth, int alpha, int beta, bool maximizingPlayer)
+        {
+            // Base case: if we have reached the search tree's depth limit or no moves are possible.
+            if (depth == 0 || !board.CanPlay())
+            {
+                // Call EvaluateBoard to get the heuristic value of the board state
+                return GameStateEvaluation.EvaluateBoard(board, maximizingPlayer ? color : color.Opponent());
+            }
+
+            if (maximizingPlayer)
+            {
+                // Best evaluation for maximizing player, starts at the worst case (lowest value).
+                int maxEval = int.MinValue;
+                // Consider all possible moves for the maximizing player.
+                foreach (var move in board.PossibleMoves(color))
+                {
+                    // Simulate the move on a clone of the board.
+                    Board newBoard = (Board)board.Clone();
+                    newBoard.PlacePiece(move);
+                    // Recursively perform Alpha-Beta pruning to evaluate the move.
+                    int eval = AlphaBeta(newBoard, depth - 1, alpha, beta, false);
+                    // Find the best evaluation value.
+                    maxEval = Math.Max(maxEval, eval);
+                    // Update alpha if a better evaluation is found.
+                    alpha = Math.Max(alpha, eval);
+                    // Alpha-Beta pruning condition: stop evaluating if we find a move that's worse than the best option for the minimizing player.
+                    if (beta <= alpha)
+                        break;
+                }
+                return maxEval;
             }
             else
             {
-                // Wait a bit and pick a random move
-                Thread.Sleep(random.Next(1000, 2000));
-                chosenMove = moves[random.Next(moves.Count)];
+                // Best evaluation for minimizing player, starts at the worst case (highest value).
+                int minEval = int.MaxValue;
+                // Consider all possible moves for the minimizing player.
+                foreach (var move in board.PossibleMoves(color.Opponent()))
+                {
+                    // Simulate the move on a clone of the board.
+                    Board newBoard = (Board)board.Clone();
+                    newBoard.PlacePiece(move);
+                    // Recursively perform Alpha-Beta pruning to evaluate the move.
+                    int eval = AlphaBeta(newBoard, depth - 1, alpha, beta, true);
+                    // Find the best evaluation value.
+                    minEval = Math.Min(minEval, eval);
+                    // Update beta if a better evaluation is found.
+                    beta = Math.Min(beta, eval);
+                    // Alpha-Beta pruning condition: stop evaluating if we find a move that's worse than the best option for the minimizing player.
+                    if (beta <= alpha)
+                        break;
+                }
+                return minEval;
             }
-            Console.WriteLine($"  {chosenMove.Square} -> {chosenMove.Value}");
-            return chosenMove;
         }
 
         /// <summary>
@@ -135,7 +221,7 @@ namespace Othello
                 {
                     return moves.Find(x => square.Equals(x.Square));
                 }
-                ConsoleManager.Error($"  Can't place a {disk.Name()} disk in square {square}!");
+                ConsoleVisuals.Error($"  Can't place a {color.Name()} disk in square {square}!");
             }
         }
 
@@ -161,7 +247,7 @@ namespace Othello
                 }
                 catch (FormatException)
                 {
-                    ConsoleManager.Error("  Give coordinates in the form 'x,y'");
+                    ConsoleVisuals.Error("  Give coordinates in the form 'x,y'");
                 }
             }
         }
@@ -177,7 +263,7 @@ namespace Othello
 
         public override string ToString()
         {
-            return $"{disk.Name()} | {TypeString()} | Moves: {roundsPlayed}";
+            return $"{color.Name()} | {TypeString()} | Moves: {roundsPlayed}";
         }
     }
 }

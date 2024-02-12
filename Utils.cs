@@ -5,7 +5,7 @@ namespace Othello
     /// <summary>
     /// Represents a game piece of given color or lack of one.
     /// </summary>
-    public enum Piece : int
+    public enum Color : int
     {
         Black = -1,
         Empty = 0,
@@ -138,10 +138,10 @@ namespace Othello
     {
         public readonly Square Square;
         public readonly int Value;
-        public readonly Piece Disk;
+        public readonly Color Disk;
         public readonly List<Step> Directions;
 
-        public Move(Square square, int value, Piece disk, List<Step> directions)
+        public Move(Square square, int value, Color disk, List<Step> directions)
         {
             Square = square;
             Value = value;
@@ -224,40 +224,40 @@ namespace Othello
 
     public static class Extensions
     {
-        public static Color DiskColor(this Piece disk)
+        public static System.Drawing.Color DiskColor(this Color disk)
         {
-            if (disk == Piece.Empty)
+            if (disk == Color.Empty)
             {
-                return Color.White;
+                return System.Drawing.Color.White;
             }
-            return disk == Piece.White ? Color.Cyan : Color.Magenta;
+            return disk == Color.White ? System.Drawing.Color.Cyan : System.Drawing.Color.Magenta;
         }
 
-        public static Piece Opponent(this Piece disk)
+        public static Color Opponent(this Color disk)
         {
-            if (disk == Piece.Empty)
+            if (disk == Color.Empty)
             {
-                return Piece.Empty;
+                return Color.Empty;
             }
-            return disk == Piece.White ? Piece.Black : Piece.White;
+            return disk == Color.White ? Color.Black : Color.White;
         }
 
-        public static string Name(this Piece disk)
+        public static string Name(this Color disk)
         {
-            return ConsoleManager.Get(disk.ToString().ToUpper(), disk.DiskColor());
+            return ConsoleVisuals.Get(disk.ToString().ToUpper(), disk.DiskColor());
         }
 
-        public static string BoardChar(this Piece disk, bool color = true)
+        public static string BoardChar(this Color disk, bool color = true)
         {
-            if (disk == Piece.Empty)
+            if (disk == Color.Empty)
             {
                 return "_";
             }
 
-            string diskChar = disk == Piece.White ? "W" : "B";
+            string diskChar = disk == Color.White ? "W" : "B";
             if (color)
             {
-                return ConsoleManager.Get(diskChar, disk.DiskColor());
+                return ConsoleVisuals.Get(diskChar, disk.DiskColor());
             }
             else
             {

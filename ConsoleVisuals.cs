@@ -3,19 +3,19 @@ using System.Drawing;
 
 namespace Othello
 {
-    public static class ConsoleManager
+    public static class ConsoleVisuals
     {
-        public static string Get<T>(T text, Color color)
+        public static string Get<T>(T text, System.Drawing.Color color)
         {
             return $"{text}".Pastel(color);
         }
 
-        public static void Write<T>(T text, Color color)
+        public static void Write<T>(T text, System.Drawing.Color color)
         {
             Console.Write($"{text}".Pastel(color));
         }
 
-        public static void WriteLine<T>(T text, Color color)
+        public static void WriteLine<T>(T text, System.Drawing.Color color)
         {
             Console.WriteLine($"{text}".Pastel(color));
         }
@@ -27,7 +27,7 @@ namespace Othello
         public static void Error(string message)
         {
             var (indent, text) = SplitLeadingWhitespace(message);
-            Console.WriteLine($"{indent}Error: {message}".Pastel(Color.Red));
+            Console.WriteLine($"{indent}Error: {message}".Pastel(System.Drawing.Color.Red));
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace Othello
         public static void Warn(string message)
         {
             var (indent, text) = SplitLeadingWhitespace(message);
-            Console.WriteLine($"{indent}Warning: {text}".Pastel(Color.Yellow));
+            Console.WriteLine($"{indent}Warning: {text}".Pastel(System.Drawing.Color.Yellow));
         }
 
         /// <summary>

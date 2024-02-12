@@ -87,7 +87,7 @@ namespace Othello
                     }
                 }
 
-                Console.WriteLine("\nPlayers:".Pastel(Color.Silver));
+                Console.WriteLine("\nPlayers:".Pastel(System.Drawing.Color.Silver));
                 PrintStatus();
             }
 
@@ -119,13 +119,13 @@ namespace Othello
             private void PrintResult()
             {
                 Console.WriteLine("\n================================");
-                ConsoleManager.WriteLine("The game is finished!", Color.Green);
-                Console.WriteLine("Result:".Pastel(Color.Silver));
+                ConsoleVisuals.WriteLine("The game is finished!", System.Drawing.Color.Green);
+                Console.WriteLine("Result:".Pastel(System.Drawing.Color.Silver));
                 PrintStatus();
                 Console.WriteLine("");
 
                 var winner = board.Result();
-                if (winner == Piece.Empty)
+                if (winner == Color.Empty)
                 {
                     Console.WriteLine("The game ended in a tie...\n");
                 }
@@ -171,7 +171,7 @@ namespace Othello
                 {
                     if (boardSize < Othello.MIN_BOARD_SIZE || boardSize > Othello.MAX_BOARD_SIZE)
                     {
-                        ConsoleManager.Warn(
+                        ConsoleVisuals.Warn(
                             $"Limiting board size to valid range {Othello.MIN_BOARD_SIZE}...{Othello.MAX_BOARD_SIZE}"
                         );
                     }
@@ -180,7 +180,7 @@ namespace Othello
                         Math.Min(boardSize, Othello.MAX_BOARD_SIZE)
                     );
                 }
-                ConsoleManager.Warn($"Invalid size, defaulting to {Othello.DEFAULT_BOARD_SIZE}...");
+                ConsoleVisuals.Warn($"Invalid size, defaulting to {Othello.DEFAULT_BOARD_SIZE}...");
                 return Othello.DEFAULT_BOARD_SIZE;
             }
 
@@ -229,7 +229,7 @@ namespace Othello
                     version
                 };
 
-                ConsoleManager.WriteLine("OTHELLO GAME - C#", Color.Green);
+                ConsoleVisuals.WriteLine("OTHELLO GAME - C#", System.Drawing.Color.Green);
 
                 rootCommand.SetHandler(
                     (size, autoplay, useDefaultSettings, showLog, hideHelpers, testMode, version) =>
@@ -240,7 +240,7 @@ namespace Othello
                             boardSize = size.Value;
                             if (boardSize < Othello.MIN_BOARD_SIZE || boardSize > Othello.MAX_BOARD_SIZE)
                             {
-                                ConsoleManager.Error($"Unsupported board size: {boardSize}");
+                                ConsoleVisuals.Error($"Unsupported board size: {boardSize}");
                                 Environment.Exit(1);
                             }
                             Console.WriteLine($"Using board size: {boardSize}");
@@ -286,7 +286,7 @@ namespace Othello
                 }
                 catch (Exception ex)
                 {
-                    ConsoleManager.Error($"An exception occurred: {ex.Message}");
+                    ConsoleVisuals.Error($"An exception occurred: {ex.Message}");
                     return 1;
                 }
             }
