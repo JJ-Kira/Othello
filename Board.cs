@@ -247,6 +247,19 @@ namespace Othello
         }
 
         /// <summary>
+        /// Counts the score.
+        /// </summary>
+        /// <returns>The number of disks belonging to the given player</returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        public int GetPlayerScore(Color player)
+        {
+            var count = 0;
+            foreach (var disk in board)
+                if (disk == player) count++;
+            return count;
+        }
+
+        /// <summary>
         /// Returns the total score (positive means more white disks and negative means more black disks).
         /// </summary>
         /// <returns></returns>
@@ -284,6 +297,11 @@ namespace Othello
                 throw new ArgumentException($"Invalid coordinates ({x},{y})!");
             }
             board[y * size + x] = pieceStatus;
+        }
+
+        public int GetEmptySquaresCount()
+        {
+            return emptySquares.Count;
         }
 
         /// Format game board to string
