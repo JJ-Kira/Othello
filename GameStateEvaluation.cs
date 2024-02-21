@@ -10,7 +10,7 @@
             {
                 int playerDiscs = CountDiscs(board, playerColor);
                 int opponentDiscs = CountDiscs(board, playerColor.Opponent());
-                score += (playerDiscs - opponentDiscs) * 64;
+                score += (playerDiscs - opponentDiscs) / 64;
                 // Disc Difference: Varies from -64 to 64 in an 8x8 game (all pieces one color to all pieces the opposite color).
                 // Normal range in competitive play is narrower.
             }
@@ -19,7 +19,8 @@
             {
                 int playerMobility = CountMobility(board, playerColor);
                 int opponentMobility = CountMobility(board, playerColor.Opponent());
-                score += (playerMobility - opponentMobility) / board.GetEmptySquaresCount();
+                int aux = board.GetEmptySquaresCount() == 0 ? 1 : board.GetEmptySquaresCount();
+                score += (playerMobility - opponentMobility) / aux;
                 // Mobility: Can range from 0 (no moves available) to a maximum based on board state.
                 // Early game, this is low; midgame, it can be quite high.
             }
@@ -36,7 +37,8 @@
             {
                 int playerStability = CalculateStability(board, playerColor);
                 int opponentStability = CalculateStability(board, playerColor.Opponent());
-                score += (playerStability - opponentStability) / board.GetPlayerScore(playerColor);
+                int aux = board.GetPlayerScore(playerColor) == 0 ? 1 : board.GetPlayerScore(playerColor);
+                score += (playerStability - opponentStability) / aux;
                 // Stability: Hard to quantify universally due to its complexity, but you might consider a range based on
                 // potentially stable positions available from the current board state.
                 // The maximum theoretically occurs when all a player's pieces are stable, which, while rare,
