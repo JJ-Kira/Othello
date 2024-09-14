@@ -2,15 +2,15 @@
 {
     internal static class GameStateEvaluation
     {
-        public static int EvaluateBoard(Board board, Color playerColor)
+        public static float EvaluateBoard(Board board, Color playerColor)
         {
-            int score = 0;
+            float score = 0;
 
             if (ShouldApplyHeuristic(board, "DiskDifference"))
             {
                 int playerDiscs = CountDiscs(board, playerColor);
                 int opponentDiscs = CountDiscs(board, playerColor.Opponent());
-                score += (playerDiscs - opponentDiscs) / 64;
+                score += (playerDiscs - opponentDiscs) / 64.0f;
                 // Disc Difference: Varies from -64 to 64 in an 8x8 game (all pieces one color to all pieces the opposite color).
                 // Normal range in competitive play is narrower.
             }
@@ -19,7 +19,7 @@
             {
                 int playerMobility = CountMobility(board, playerColor);
                 int opponentMobility = CountMobility(board, playerColor.Opponent());
-                int aux = board.GetEmptySquaresCount() == 0 ? 1 : board.GetEmptySquaresCount();
+                float aux = board.GetEmptySquaresCount() == 0 ? 1.0f : board.GetEmptySquaresCount();
                 score += (playerMobility - opponentMobility) / aux;
                 // Mobility: Can range from 0 (no moves available) to a maximum based on board state.
                 // Early game, this is low; midgame, it can be quite high.
@@ -29,7 +29,7 @@
             {
                 int playerCorners = CountCorners(board, playerColor);
                 int opponentCorners = CountCorners(board, playerColor.Opponent());
-                score += (playerCorners - opponentCorners) / 4;
+                score += (playerCorners - opponentCorners) / 4.0f;
                 // Corner Control: Ranges from 0 to 4, as there are four corners.
             }
 
@@ -37,7 +37,7 @@
             {
                 int playerStability = CalculateStability(board, playerColor);
                 int opponentStability = CalculateStability(board, playerColor.Opponent());
-                int aux = board.GetPlayerScore(playerColor) == 0 ? 1 : board.GetPlayerScore(playerColor);
+                float aux = board.GetPlayerScore(playerColor) == 0 ? 1.0f : board.GetPlayerScore(playerColor);
                 score += (playerStability - opponentStability) / aux;
                 // Stability: Hard to quantify universally due to its complexity, but you might consider a range based on
                 // potentially stable positions available from the current board state.
@@ -50,7 +50,7 @@
             // Parity: Often binary (-1, 1) representing disadvantage or advantage, but could be expanded based on remaining move possibilities.
 
             if (ShouldApplyHeuristic(board, "SquareWeights"))
-                score += CalculateSquareWeights(board, playerColor) / (25 * board.size);
+                score += CalculateSquareWeights(board, playerColor) / (float)(25 * board.size);
             // Square Weights: This depends on your weight distribution but is bounded by the total positive or negative weight
             // assigned to the board configuration. For our function, let's assume 25 * board size.
 

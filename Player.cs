@@ -1,6 +1,4 @@
-﻿using System.Drawing;
-
-namespace Othello
+﻿namespace Othello
 {
     /// <summary>
     /// Defines a single player (human or computer).
@@ -12,7 +10,6 @@ namespace Othello
         private bool isHuman;
         private int roundsPlayed;
         private readonly Color color;
-        private readonly Random random;
         private readonly PlayerSettings settings;
 
         public Player(Color color, PlayerSettings settings)
@@ -20,7 +17,6 @@ namespace Othello
             canPlay = true;
             this.color = color;
             isHuman = true;
-            random = new Random();
             this.settings = settings;
         }
 
@@ -108,13 +104,13 @@ namespace Othello
             Console.WriteLine("  Computer plays...");
 
             // Alpha represents the best score that the maximizing player can guarantee at current or higher levels.
-            int alpha = int.MinValue;
+            float alpha = float.MinValue;
             // Beta represents the best score that the minimizing player can guarantee at current or higher levels.
-            int beta = int.MaxValue;
+            float beta = float.MaxValue;
             // Best move found for the computer.
             Move bestMove = moves[0];
             // Best score found for the computer, initialized to the lowest possible value.
-            int bestScore = int.MinValue;
+            float bestScore = float.MinValue;
             // The depth of the search tree to explore.
             int depth = 5;
 
@@ -126,7 +122,7 @@ namespace Othello
                 // Apply the move to the cloned board.
                 newBoard.PlacePiece(move);
                 // Perform the Alpha-Beta search recursively to evaluate the move.
-                int score = AlphaBeta(newBoard, depth - 1, alpha, beta, false);
+                float score = AlphaBeta(newBoard, depth - 1, alpha, beta, false);
 
                 // If the move has a better score than the best found so far, update the best move and score.
                 if (score > bestScore)
@@ -151,7 +147,7 @@ namespace Othello
         /// <param name="beta">The best score the minimizing player can guarantee so far.</param>
         /// <param name="maximizingPlayer">Whether the current turn is for the maximizing player.</param>
         /// <returns>The best score that can be achieved from the current board state.</returns>
-        private int AlphaBeta(Board board, int depth, int alpha, int beta, bool maximizingPlayer)
+        private float AlphaBeta(Board board, int depth, float alpha, float beta, bool maximizingPlayer)
         {
             // Base case: if we have reached the search tree's depth limit or no moves are possible.
             if (depth == 0 || !board.CanPlay())
@@ -163,7 +159,7 @@ namespace Othello
             if (maximizingPlayer)
             {
                 // Best evaluation for maximizing player, starts at the worst case (lowest value).
-                int maxEval = int.MinValue;
+                float maxEval = int.MinValue;
                 // Consider all possible moves for the maximizing player.
                 foreach (var move in board.PossibleMoves(color))
                 {
@@ -171,12 +167,13 @@ namespace Othello
                     Board newBoard = (Board)board.Clone();
                     newBoard.PlacePiece(move);
                     // Recursively perform Alpha-Beta pruning to evaluate the move.
-                    int eval = AlphaBeta(newBoard, depth - 1, alpha, beta, false);
+                    float eval = AlphaBeta(newBoard, depth - 1, alpha, beta, false);
                     // Find the best evaluation value.
                     maxEval = Math.Max(maxEval, eval);
                     // Update alpha if a better evaluation is found.
                     alpha = Math.Max(alpha, eval);
-                    // Alpha-Beta pruning condition: stop evaluating if we find a move that's worse than the best option for the minimizing player.
+                    // Alpha-Beta pruning condition: stop evaluating if we find a move that's worse than
+                    // the best option for the minimizing player.
                     if (beta <= alpha)
                         break;
                 }
@@ -185,7 +182,7 @@ namespace Othello
             else
             {
                 // Best evaluation for minimizing player, starts at the worst case (highest value).
-                int minEval = int.MaxValue;
+                float minEval = int.MaxValue;
                 // Consider all possible moves for the minimizing player.
                 foreach (var move in board.PossibleMoves(color.Opponent()))
                 {
@@ -193,12 +190,13 @@ namespace Othello
                     Board newBoard = (Board)board.Clone();
                     newBoard.PlacePiece(move);
                     // Recursively perform Alpha-Beta pruning to evaluate the move.
-                    int eval = AlphaBeta(newBoard, depth - 1, alpha, beta, true);
+                    float eval = AlphaBeta(newBoard, depth - 1, alpha, beta, true);
                     // Find the best evaluation value.
                     minEval = Math.Min(minEval, eval);
                     // Update beta if a better evaluation is found.
                     beta = Math.Min(beta, eval);
-                    // Alpha-Beta pruning condition: stop evaluating if we find a move that's worse than the best option for the minimizing player.
+                    // Alpha-Beta pruning condition: stop evaluating if we find a move that's worse than
+                    // the best option for the minimizing player.
                     if (beta <= alpha)
                         break;
                 }
